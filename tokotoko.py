@@ -130,7 +130,7 @@ async def on_message(message: discord.Message):
                 if proc.returncode == 0:
                     await message.reply("startup signal sent")
                     while get_server_status() != SERVER_STATUS_RUNNING:
-                        update_status()
+                        await update_status()
                         await sleep(10)
                     await message.reply("startup successfully")
                 else:
@@ -145,7 +145,7 @@ async def on_message(message: discord.Message):
 
                 if proc.returncode == 0:
                     while get_server_status() != SERVER_STATUS_STOPPED:
-                        update_status(discord_text="停止準備中", discord_status=discord.status.idle)
+                        await update_status(discord_text="停止準備中", discord_status=discord.status.idle)
                         await sleep(10)
                     await message.reply("shutdown completed")
                 
