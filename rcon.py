@@ -16,5 +16,9 @@ args = sys.argv
 if len(args) <= 1:
     print("usage: ./rcon.py [command]")
 
-with mcrcon.MCRcon(server_address, server_pass, server_port) as mcr:
-    print(mcr.command(args[1]))
+try:
+    with mcrcon.MCRcon(server_address, server_pass, server_port) as mcr:
+        print(mcr.command(args[1]))
+    exit(0)
+except ConnectionRefusedError as e:
+    exit(-1)
