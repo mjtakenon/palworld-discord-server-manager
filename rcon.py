@@ -9,7 +9,7 @@ load_dotenv()
 
 server_address = os.getenv("SERVER_HOST")
 server_pass = os.getenv("SERVER_PASSWORD")
-server_port = os.getenv("SERVER_PORT")
+server_port = int(os.getenv("SERVER_PORT"))
 
 args = sys.argv
 
