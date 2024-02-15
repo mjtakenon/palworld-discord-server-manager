@@ -83,7 +83,7 @@ async def on_message(message: discord.Message):
     if message.author.bot:
         return
 
-    if message.channel.name != "🎮server-controls":
+    if message.channel.name != os.getenv("DISCORD_CHANNEL_NAME"):
         return
 
     command = message.content.strip()
