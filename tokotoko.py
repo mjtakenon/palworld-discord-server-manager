@@ -19,7 +19,7 @@ intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 
-bot = commands.Bot( # Bot
+bot = commands.Bot(
     command_prefix="$",
     case_insensitive=True,
     intents=intents
@@ -28,9 +28,22 @@ bot = commands.Bot( # Bot
 RCON_PATH = os.getenv("RCON_PATH")
 DISCORD_POLLING_INTERVAL = int(os.getenv("DISCORD_POLLING_INTERVAL"))
 
-def is_running():
+SERVER_STATUS_RUNNING = "running"
+SERVER_STATUS_PENDING = "pending"
+SERVER_STATUS_STOPPED = "stopped"
+
+def get_server_status():
+    proc = subprocess.run("python " + RCON_PATH + " info", shell=True, stdout=PIPE, stderr=PIPE, text=True)
+
+    if proc.returncode == 0:
+        return SERVER_STATUS_RUNNING
+
     proc = subprocess.run("pgrep -f -l -c PalServer-Linux", shell=True, stdout=PIPE, stderr=PIPE, text=True)
-    return int(proc.stdout.strip()) >= 2
+
+    if int(proc.stdout.strip()) >= 2:
+        return SERVER_STATUS_PENDING
+
+    return SERVER_STATUS_STOPPED
 
 def free():
     return subprocess.run("free -h", shell=True, stdout=PIPE, stderr=PIPE, text=True)
@@ -54,31 +67,41 @@ def get_swap_usage():
 async def sleep(n):
     await asyncio.sleep(n)
 
-async def update_status():
-    text = "停止中/"
-    status = discord.Status.dnd
-    if is_running():
-        text = "起動中/"
-        status = discord.Status.online
-    text += "swap使用量: " + get_swap_usage() 
-    await bot.change_presence(status=status, activity=discord.CustomActivity(name=text))
+async def update_status(discord_text = None, discord_status = None):
+
+    status = get_server_status()
+
+    if discord_text == None:
+        if status == SERVER_STATUS_RUNNING:
+            discord_text = "稼働中"
+        elif status == SERVER_STATUS_PENDING:
+            discord_text = "起動中"
+        else:
+            discord_text = "停止中"
+    
+    if discord_status == None:
+        if status == SERVER_STATUS_RUNNING:
+            discord_status = discord.Status.online
+        elif status == SERVER_STATUS_PENDING:
+            discord_status = discord.Status.idle
+        else:
+            discord_status = discord.Status.dnd
+    
+    discord_text += "/swap使用量: " + get_swap_usage() 
+
+    await bot.change_presence(status=discord_status, activity=discord.CustomActivity(name=discord_text))
 
 @bot.event
 async def on_ready():
-    print("Bot is ready!")
-    #await bot.change_presence(activity=discord.CustomActivity(name="!helpで使い方表示"))
+    print("on_ready")
 
     while True:
         await update_status()
         await sleep(DISCORD_POLLING_INTERVAL)
-    #loop = asyncio.get_event_loop()
-    #loop.call_later(10, lambda l: l.stop(), loop)
-    #loop.call_soon(timer, loop)
-
-    #loop.run_forever()
 
 @bot.event
 async def on_message(message: discord.Message):
+    print("on_message: " + message.content)
 
     if message.author.bot:
         return
@@ -93,48 +116,53 @@ async def on_message(message: discord.Message):
             await message.reply(proc.stdout + proc.stderr)
 
         case "!status":
-            if is_running():
+            status = get_server_status()
+            if status == SERVER_STATUS_RUNNING:
                 await message.reply("server is running")
+            elif status == SERVER_STATUS_PENDING:
+                await message.reply("server is pending")
             else:
                 await message.reply("server is stopping")
 
         case "!start":
-            if is_running():
+            if get_server_status() != SERVER_STATUS_STOPPED:
                 await message.reply("server is running")
             else:
                 proc = start()
-                print(proc)
-                if proc.stdout.strip() == "" and proc.stderr.strip() == "":
-                    await message.reply("start successfully")
+                if proc.returncode == 0:
+                    await message.reply("startup signal sent")
+                    while get_server_status() != SERVER_STATUS_RUNNING:
+                        await sleep(5)
+                    await message.reply("startup successfully")
                 else:
-                    await message.reply("start failure: " + proc.stderr)
-                    
+                    await message.reply("start failure: " + proc.stdout + " " + proc.stderr)
+
         case "!stop":
-            if not is_running():
-                await message.reply("server is stopping")
+            if get_server_status() != SERVER_STATUS_RUNNING:
+                await message.reply("server is stopped")
             else:
                 proc = stop()
                 await message.reply(proc.stdout + proc.stderr)
 
-                while is_running():
-                    await sleep(5)
-
-                await message.reply("shutdown completed")
+                if proc.returncode == 0:
+                    while get_server_status() != SERVER_STATUS_STOPPED:
+                        await sleep(5)
+                    await message.reply("shutdown completed")
                 
         case "!update":
-            if is_running():
+            if get_server_status() != SERVER_STATUS_STOPPED:
                 await message.reply("server is running")
             else:
                 proc = update()
                 await message.reply(proc.stdout + proc.stderr)
-                
+
         case "!players":
-            if not is_running():
-                await message.reply("server is stopping")
+            if get_server_status() != SERVER_STATUS_RUNNING:
+                await message.reply("server is stopped")
             else:
                 proc = show_players()
                 await message.reply(proc.stdout + proc.stderr)
-                
+
         case "!help":
             await message.reply("Usage: !{free|status|start|stop|players|help|update}")
             
