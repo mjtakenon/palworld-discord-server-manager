@@ -26,7 +26,7 @@ bot = commands.Bot( # Bot
 )
 
 RCON_PATH = os.getenv("RCON_PATH")
-POLLING_INTERVAL = os.getenv("DISCORD_POLLING_INTERVAL")
+DISCORD_POLLING_INTERVAL = int(os.getenv("DISCORD_POLLING_INTERVAL"))
 
 def is_running():
     proc = subprocess.run("pgrep -f -l -c PalServer-Linux", shell=True, stdout=PIPE, stderr=PIPE, text=True)
@@ -70,7 +70,7 @@ async def on_ready():
 
     while True:
         await update_status()
-        await sleep(POLLING_INTERVAL)
+        await sleep(DISCORD_POLLING_INTERVAL)
     #loop = asyncio.get_event_loop()
     #loop.call_later(10, lambda l: l.stop(), loop)
     #loop.call_soon(timer, loop)
