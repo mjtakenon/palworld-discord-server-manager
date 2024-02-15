@@ -1,9 +1,7 @@
 #!/home/mjtak/.pyenv/shims/python
 
 from discord.ext import commands
-from discord import app_commands
 import discord
-import time
 
 import subprocess
 from subprocess import PIPE
@@ -132,7 +130,8 @@ async def on_message(message: discord.Message):
                 if proc.returncode == 0:
                     await message.reply("startup signal sent")
                     while get_server_status() != SERVER_STATUS_RUNNING:
-                        await sleep(5)
+                        update_status()
+                        await sleep(10)
                     await message.reply("startup successfully")
                 else:
                     await message.reply("start failure: " + proc.stdout + " " + proc.stderr)
@@ -146,7 +145,8 @@ async def on_message(message: discord.Message):
 
                 if proc.returncode == 0:
                     while get_server_status() != SERVER_STATUS_STOPPED:
-                        await sleep(5)
+                        update_status(discord_text="停止準備中", discord_status=discord.status.idle)
+                        await sleep(10)
                     await message.reply("shutdown completed")
                 
         case "!update":
