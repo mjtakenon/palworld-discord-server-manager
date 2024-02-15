@@ -51,7 +51,10 @@ def get_swap_usage():
     proc = subprocess.run("free -h | grep Swap: | awk '{print $3}'", shell=True, stdout=PIPE, stderr=PIPE, text=True)
     return proc.stdout.strip()
 
-async def timer():
+async def sleep(n):
+    await asyncio.sleep(n)
+
+async def update_status():
     text = "停止中/"
     status = discord.Status.dnd
     if is_running():
@@ -59,15 +62,15 @@ async def timer():
         status = discord.Status.online
     text += "swap使用量: " + get_swap_usage() 
     await bot.change_presence(status=status, activity=discord.CustomActivity(name=text))
-    await asyncio.sleep(POLLING_INTERVAL)
-    
+
 @bot.event
 async def on_ready():
     print("Bot is ready!")
     #await bot.change_presence(activity=discord.CustomActivity(name="!helpで使い方表示"))
 
     while True:
-        await timer()
+        await update_status()
+        await sleep(POLLING_INTERVAL)
     #loop = asyncio.get_event_loop()
     #loop.call_later(10, lambda l: l.stop(), loop)
     #loop.call_soon(timer, loop)
@@ -112,10 +115,9 @@ async def on_message(message: discord.Message):
             else:
                 proc = stop()
                 await message.reply(proc.stdout + proc.stderr)
-                # todo: send message after shutdown
 
                 while is_running():
-                    time.sleep(5)
+                    await sleep(5)
 
                 await message.reply("shutdown completed")
                 
@@ -137,6 +139,8 @@ async def on_message(message: discord.Message):
             await message.reply("Usage: !{free|status|start|stop|players|help|update}")
             
         case _:
-            await message.reply("unknown command: " + command)
+            if command[0] == "!":
+                await message.reply("unknown command: " + command)
+            
 
 bot.run(os.getenv("DISCORD_TOKEN"))
