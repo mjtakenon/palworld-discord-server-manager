@@ -25,8 +25,8 @@ bot = commands.Bot( # Bot
     intents=intents
 )
 
-RCON_PATH = "/home/steam/script/rcon.py"
-POLLING_INTERVAL = 60
+RCON_PATH = os.getenv("RCON_PATH")
+POLLING_INTERVAL = os.getenv("DISCORD_POLLING_INTERVAL")
 
 def is_running():
     proc = subprocess.run("pgrep -f -l -c PalServer-Linux", shell=True, stdout=PIPE, stderr=PIPE, text=True)
