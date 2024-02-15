@@ -145,7 +145,7 @@ async def on_message(message: discord.Message):
 
                 if proc.returncode == 0:
                     while get_server_status() != SERVER_STATUS_STOPPED:
-                        await update_status(discord_text="停止準備中", discord_status=discord.status.idle)
+                        await update_status(discord_text="停止準備中", discord_status=discord.Status.idle)
                         await sleep(10)
                     await message.reply("shutdown completed")
                 
