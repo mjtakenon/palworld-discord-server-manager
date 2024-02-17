@@ -1,0 +1,12 @@
+[Unit]
+Description=palworld-discord-server-manager
+After=network-online.target
+
+[Service]
+User= # fixme
+ExecStart=/bin/sh /path/to/start.sh # fixme
+Restart=always
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

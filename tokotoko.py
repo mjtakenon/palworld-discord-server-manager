@@ -1,5 +1,3 @@
-#!/home/mjtak/.pyenv/shims/python
-
 from discord.ext import commands
 import discord
 
@@ -25,6 +23,12 @@ bot = commands.Bot(
 
 RCON_PATH = os.getenv("RCON_PATH")
 DISCORD_POLLING_INTERVAL = int(os.getenv("DISCORD_POLLING_INTERVAL"))
+PALWORLD_INSTALL_DIR = os.getenv("PALWORLD_INSTALL_DIR")
+SERVER_PUBLIC_IP = os.getenv("SERVER_PUBLIC_IP")
+SERVER_PUBLIC_PORT = os.getenv("SERVER_PUBLIC_PORT")
+DISCORD_CHANNEL_NAME = os.getenv("DISCORD_CHANNEL_NAME")
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+STEAMCMD_PATH = os.getenv("STEAMCMD_PATH")
 
 SERVER_STATUS_RUNNING = "running"
 SERVER_STATUS_PENDING = "pending"
@@ -47,7 +51,7 @@ def free():
     return subprocess.run("free -h", shell=True, stdout=PIPE, stderr=PIPE, text=True)
 
 def start():
-    return subprocess.run("screen -AmdS palworld /bin/bash /opt/steam/PalWorld/PalServer.sh -useperfthreads -NoAsyncLoadingThread -UseMultithreadForDS EpicApp=PalServer -publicip=116.80.59.136 -publicport=8211", shell=True, stdout=PIPE, stderr=PIPE, text=True)
+    return subprocess.run("screen -AmdS palworld /bin/bash " + PALWORLD_INSTALL_DIR + "/PalServer.sh -useperfthreads -NoAsyncLoadingThread -UseMultithreadForDS EpicApp=PalServer -publicip=" + SERVER_PUBLIC_IP + " -publicport=" + SERVER_PUBLIC_PORT, shell=True, stdout=PIPE, stderr=PIPE, text=True)
     
 def stop():
     return subprocess.run("python " + RCON_PATH + " shutdown", shell=True, stdout=PIPE, stderr=PIPE, text=True)
@@ -56,7 +60,7 @@ def show_players():
     return subprocess.run("python " + RCON_PATH + " showplayers", shell=True, stdout=PIPE, stderr=PIPE, text=True)
     
 def update():
-    return subprocess.run("/usr/games/steamcmd +login anonymous +force_install_dir /opt/steam/PalWorld +app_update 2394010 validate +quit", shell=True, stdout=PIPE, stderr=PIPE, text=True)
+    return subprocess.run(STEAMCMD_PATH + " +login anonymous +force_install_dir " + PALWORLD_INSTALL_DIR + " +app_update 2394010 validate +quit", shell=True, stdout=PIPE, stderr=PIPE, text=True)
 
 def get_swap_usage():
     proc = subprocess.run("free -h | grep Swap: | awk '{print $3}'", shell=True, stdout=PIPE, stderr=PIPE, text=True)
@@ -104,7 +108,7 @@ async def on_message(message: discord.Message):
     if message.author.bot:
         return
 
-    if message.channel.name != os.getenv("DISCORD_CHANNEL_NAME"):
+    if message.channel.name != DISCORD_CHANNEL_NAME:
         return
 
     command = message.content.strip()
@@ -173,4 +177,4 @@ async def on_message(message: discord.Message):
                 await message.reply("unknown command: " + command)
             
 
-bot.run(os.getenv("DISCORD_TOKEN"))
+bot.run(DISCORD_TOKEN)

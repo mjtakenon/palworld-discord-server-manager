@@ -1,5 +1,3 @@
-#!/home/mjtak/.pyenv/shims/python
-
 import mcrcon
 import sys
 import os
