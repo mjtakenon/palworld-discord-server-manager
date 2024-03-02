@@ -8,7 +8,7 @@ import asyncio
 
 import os
 from dotenv import load_dotenv
-import re
+import math
 
 load_dotenv()
 
@@ -29,6 +29,7 @@ SERVER_PUBLIC_IP = os.getenv("SERVER_PUBLIC_IP")
 SERVER_PUBLIC_PORT = os.getenv("SERVER_PUBLIC_PORT")
 DISCORD_CHANNEL_NAME = os.getenv("DISCORD_CHANNEL_NAME")
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+DISCORD_SEND_MAX_LENGTH = 1500
 STEAMCMD_PATH = os.getenv("STEAMCMD_PATH")
 
 SERVER_STATUS_RUNNING = "running"
@@ -160,9 +161,11 @@ async def on_message(message: discord.Message):
             if get_server_status() != SERVER_STATUS_STOPPED:
                 await message.reply("server is running")
             else:
+                await message.reply("update process started")
                 proc = update()
-                for txt in re.findall('.{1,1500}', proc.stdout + " " + proc.stderr):
-                    await message.reply(txt)
+                txt = proc.stdout + " " + proc.stderr
+                for t in range(math.ceil(len(txt) / DISCORD_SEND_MAX_LENGTH)):
+                    await message.reply(txt[t*DISCORD_SEND_MAX_LENGTH:t*DISCORD_SEND_MAX_LENGTH+DISCORD_SEND_MAX_LENGTH])
 
         case "!players":
             if get_server_status() != SERVER_STATUS_RUNNING:
