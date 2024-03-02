@@ -8,6 +8,7 @@ import asyncio
 
 import os
 from dotenv import load_dotenv
+import re
 
 load_dotenv()
 
@@ -160,7 +161,8 @@ async def on_message(message: discord.Message):
                 await message.reply("server is running")
             else:
                 proc = update()
-                await message.reply(proc.stdout + proc.stderr)
+                for txt in re.findall('.{1,1500}', proc.stdout + " " + proc.stderr):
+                    await message.reply(txt)
 
         case "!players":
             if get_server_status() != SERVER_STATUS_RUNNING:
